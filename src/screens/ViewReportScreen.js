@@ -156,8 +156,10 @@ export default function EditReportScreen({ route, navigation }) {
             <tr><th>Train No.</th><td>${report.trainNumber}</td></tr>
             <tr><th>Status</th><td>${report.status}</td></tr>
             <tr><th>Compartment No.</th><td>${report.compartmentNumber}</td></tr>
-            <tr><th>Recommendation</th><td>${report.recommendation}</td></tr>
+            <tr><th>Wheel Diameter</th><td>${report.wheel_diameter}</td></tr>
             <tr><th>Wheel No.</th><td>${report.wheelNumber}</td></tr>
+            <tr><th>Recommendation</th><td>${report.recommendation}</td></tr>
+
           </table>
         </div>
       </body>
