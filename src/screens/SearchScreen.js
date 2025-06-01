@@ -19,9 +19,9 @@ export default function SearchScreen({ navigation }) {
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        const response = await axios.get('http://192.168.1.11:5000/api/reports');
-        setReports(response.data);
-        setFilteredReports(response.data);
+        const response = await axios.get('https://ann-flaw-detection-system-for-train.onrender.com/api/reports');
+          setReports(response.data.data);
+          setFilteredReports(response.data.data);
       } catch (err) {
         console.error('Error fetching reports:', err);
       }
@@ -30,12 +30,28 @@ export default function SearchScreen({ navigation }) {
   }, []);
 
   const handleSearch = (text) => {
-    setSearchTerm(text);
-    const filtered = reports.filter((r) =>
-      r.name.toLowerCase().includes(text.toLowerCase())
-    );
+    const query = text.toLowerCase();
+    setSearchTerm(query);
+
+    const filtered = reports.filter((r) => {
+      const date = new Date(r.timestamp).toLocaleDateString('en-US');
+      const combined = `
+        ${r.name}
+        t${r.trainNumber}
+        train ${r.trainNumber}
+        c${r.compartmentNumber}
+        compartment ${r.compartmentNumber}
+        w${r.wheelNumber}
+        wheel ${r.wheelNumber}
+        ${date}
+      `.toLowerCase();
+
+      return combined.includes(query);
+    });
+
     setFilteredReports(filtered);
   };
+
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
@@ -74,6 +90,11 @@ export default function SearchScreen({ navigation }) {
           keyExtractor={(item) => item._id}
           renderItem={renderItem}
         />
+        {filteredReports.length === 0 && (
+          <Text style={{ textAlign: 'center', marginTop: 20, color: '#666' }}>
+            No matching reports found.
+          </Text>
+        )}
       </View>
             <View style={{borderColor: 'transparent', borderWidth: 0, height: 60}}>
       </View>

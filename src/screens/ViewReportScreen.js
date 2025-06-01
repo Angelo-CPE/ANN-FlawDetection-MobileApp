@@ -26,7 +26,7 @@ export default function EditReportScreen({ route, navigation }) {
   useEffect(() => {
     const fetchReport = async () => {
       try {
-        const response = await axios.get(`http://192.168.1.11:5000/api/reports/${reportId}`);
+        const response = await axios.get(`https://ann-flaw-detection-system-for-train.onrender.com/api/reports/${reportId}`);
         setReport(response.data);
       } catch (error) {
         console.error('Error fetching report:', error);
@@ -38,7 +38,7 @@ export default function EditReportScreen({ route, navigation }) {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://192.168.1.11:5000/api/reports/${report._id}`);
+      await axios.delete(`https://ann-flaw-detection-system-for-train.onrender.com/api/reports/${report._id}`);
       setModalVisible(true);
       setTimeout(() => {
         setModalVisible(false);
@@ -139,16 +139,16 @@ export default function EditReportScreen({ route, navigation }) {
       <body>
         <div class="header-grid">
           <div class="header-left">
-            <h1>Surface Flaw Report</h1>
+            <h1>Wheels and Metal Inspection Report</h1>
             <h2>${report.name}</h2>
           </div>
           <div class="header-right">
-            <img class="logo" src="http://192.168.1.11:5000/uploads/logo.png" alt="Logo" />
+            <img class="logo" src="https://ann-flaw-detection-system-for-train.onrender.com/uploads/logo.png" alt="Logo" />
           </div>
         </div>
         <div class="image-container">
           ${report.image_path
-            ? `<img src="http://192.168.1.11:5000${report.image_path}" alt="Report Image" />`
+            ? `<img src="https://ann-flaw-detection-system-for-train.onrender.com${report.image_path}" alt="Report Image" />`
             : '<p>No image available.</p>'}
         </div>
         <div class="table-wrapper">
@@ -156,8 +156,10 @@ export default function EditReportScreen({ route, navigation }) {
             <tr><th>Train No.</th><td>${report.trainNumber}</td></tr>
             <tr><th>Status</th><td>${report.status}</td></tr>
             <tr><th>Compartment No.</th><td>${report.compartmentNumber}</td></tr>
-            <tr><th>Recommendation</th><td>${report.recommendation}</td></tr>
+            <tr><th>Wheel Diameter</th><td>${report.wheel_diameter}</td></tr>
             <tr><th>Wheel No.</th><td>${report.wheelNumber}</td></tr>
+            <tr><th>Recommendation</th><td>${report.recommendation}</td></tr>
+
           </table>
         </div>
       </body>
@@ -187,9 +189,6 @@ export default function EditReportScreen({ route, navigation }) {
 };
 
 
-
-
-
   if (!report) {
     return (
       <View style={styles.loadingContainer}>
@@ -203,7 +202,7 @@ export default function EditReportScreen({ route, navigation }) {
       <View style={styles.sectionContainer}>
         {report.image_path ? (
           <Image
-            source={{ uri: `http://192.168.1.11:5000${report.image_path}` }}
+            source={{ uri: `https://ann-flaw-detection-system-for-train.onrender.com${report.image_path}` }}
             style={styles.reportImage}
           />
         ) : (
@@ -225,18 +224,21 @@ export default function EditReportScreen({ route, navigation }) {
 
         <View style={styles.tableRow}>
           <Text style={styles.tableHeader}>Compartment No.</Text>
-          <Text style={styles.tableHeader}>Recommendation</Text>
+          <Text style={styles.tableHeader}>Wheel Diameter</Text>
         </View>
         <View style={styles.tableRow}>
           <Text style={styles.tableCell}>{report.compartmentNumber}</Text>
-          <Text style={styles.tableCell}>{report.recommendation}</Text>
+          <Text style={styles.tableCell}>{report.wheel_diameter}</Text>
         </View>
 
         <View style={styles.tableRow}>
           <Text style={styles.tableHeader}>Wheel No.</Text>
+          <Text style={styles.tableHeader}>Recommendation</Text>
+
         </View>
         <View style={styles.tableRow}>
           <Text style={styles.tableCell}>{report.wheelNumber}</Text>
+          <Text style={styles.tableCell}>{report.recommendation}</Text>
         </View>
       </View>
 
