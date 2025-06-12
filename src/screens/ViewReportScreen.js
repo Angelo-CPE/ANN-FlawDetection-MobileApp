@@ -14,7 +14,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function EditReportScreen({ route, navigation }) {
   const { reportId } = route.params;
@@ -23,32 +23,68 @@ export default function EditReportScreen({ route, navigation }) {
   const [isSharing, setIsSharing] = useState(false);
 
   
-  useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        const response = await axios.get(`https://ann-flaw-detection-system-for-train.onrender.com/api/reports/${reportId}`);
-        setReport(response.data);
-      } catch (error) {
-        console.error('Error fetching report:', error);
+useEffect(() => {
+  const fetchReport = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token'); // Or your token storage method
+      
+      const response = await axios.get(
+        `https://ann-flaw-detection-system-for-train.onrender.com/api/reports/${reportId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      
+      setReport(response.data);
+    } catch (error) {
+      console.error('Error fetching report:', error);
+      if (error.response?.status === 401) {
+        navigation.navigate('Login');
       }
-    };
-    fetchReport();
-  }, [reportId]);
+    }
+  };
+  
+  fetchReport();
+}, [reportId]);
 
 
   const handleDelete = async () => {
-    try {
-      await axios.delete(`https://ann-flaw-detection-system-for-train.onrender.com/api/reports/${report._id}`);
-      setModalVisible(true);
-      setTimeout(() => {
-        setModalVisible(false);
-        navigation.navigate('Tabs', { screen: 'Home' });
-      }, 1500);
-    } catch (error) {
-      console.error('Delete failed:', error);
+  try {
+    // Get the token from wherever you're storing it (AsyncStorage, etc.)
+    const token = await AsyncStorage.getItem('token'); // or your token storage method
+    
+    const response = await axios.delete(
+      `https://ann-flaw-detection-system-for-train.onrender.com/api/reports/${report._id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    
+    setModalVisible(true);
+    setTimeout(() => {
+      setModalVisible(false);
+      navigation.navigate('Tabs', { screen: 'Home' });
+    }, 1500);
+  } catch (error) {
+    console.error('Delete failed:', error);
+    // Handle specific error cases
+    if (error.response) {
+      if (error.response.status === 401) {
+        alert('You need to be logged in to delete reports');
+      } else if (error.response.status === 403) {
+        alert('Only admins can delete reports');
+      } else {
+        alert('Failed to delete report');
+      }
+    } else {
+      alert('Network error - please check your connection');
     }
-  };
-
+  }
+};
 
   const handlePrint = async () => {
   if (isSharing) return;
@@ -331,7 +367,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   deleteButton: {
-    backgroundColor: '#000000',
+    backgroundColor: '#c62828',
     padding: 18,
     borderRadius: 4,
     width: '100%',

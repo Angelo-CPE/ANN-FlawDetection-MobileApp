@@ -7,6 +7,15 @@ import WheelDiameterScreen from './screens/WheelDiameterScreen';
 import ViewReportScreen from './screens/ViewReportScreen';  // Import Edit Report Screen
 import SearchScreen from './screens/SearchScreen';  // Import Search Placeholder Screen
 import ProfileScreen from './screens/ProfileScreen';  
+import LoginScreen from './screens/LoginScreen';
+import RegisterScreen from './screens/RegisterScreen';
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
+import ResetPasswordScreen from './screens/ResetPasswordScreen';
+import AdminPanelScreen from './screens/AdminPanelScreen';
+import OTPRequestScreen from './screens/OTPRequestScreen';
+import OTPVerificationScreen from './screens/OTPVerificationScreen';
+import NewPasswordScreen from './screens/NewPasswordScreen';
+import ForgotPasswordDeepLinkHandler from './screens/ForgotPasswordDeepLinkHandler';
 import Icon from 'react-native-vector-icons/MaterialIcons'; 
 import { Image, TouchableOpacity } from 'react-native'; 
 
@@ -21,41 +30,41 @@ function TabNavigator() {
         tabBarIcon: ({ color, size }) => {
           let iconName;
           if (route.name === 'Home') {
-            iconName = 'home'; // Icon for Home
+            iconName = 'home'; 
             size = 30;
           } else if (route.name === 'Search') {
             iconName = 'search' ;
-            size = 30; // Icon for Search
+            size = 30; 
           } else if (route.name === 'Profile') {
-            // Profile icon as a circular placeholder
-            return <Image source={require('./assets/test.jpg')} style={{ width: 30, height: 30, borderRadius: 20, borderColor: '#888', borderWidth: 1 }} />;
+            return <Image source={require('./assets/default-avatar.jpg')} style={{ width: 30, height: 30, borderRadius: 20, borderColor: '#888', borderWidth: 1 }} />;
           }
           return <Icon name={iconName} size={size} color={color} />;
         },
-        tabBarLabel: () => null,  // Remove the labels (Home, Search, Profile)
+        tabBarLabel: () => null,  
         tabBarStyle: {
           paddingStart: 50,
-          height: 60, // Lower the height of the tab bar to make the icons more compressed
-          backgroundColor: 'white', // Ensure no background color for the tab bar
-          borderTopWidth: 0, // Remove the top border of the tab bar
-          position: 'absolute', // Position the tab bar absolutely to avoid any background or extra space
-          bottom: 5,
+          paddingTop: 15,
+          height: 60, 
+          backgroundColor: '#fff',
+          borderTopWidth: 0, 
+          position: 'absolute', 
+          bottom: 0,
           display: 'flex',
-          flexDirection: 'row', // Ensures icons are horizontally centered
-          justifyContent: 'center', // Centers the icons in the middle of the tab bar
-          paddingBottom: 5, // Reduces any extra padding below the icons
-          shadowOpacity: 0, // Remove the shadow to avoid a border or any shadow under the tab bar
-          elevation: 0, // Remove shadow on Android
+          flexDirection: 'row',
+          justifyContent: 'center', 
+          paddingBottom: 60,
+          shadowOpacity: 0,
+          elevation: 0,
         },
         tabBarItemStyle: {
           flex: 1,
           maxWidth: 100, 
-          paddingHorizontal: 10,  // Remove horizontal padding
-          marginHorizontal: -10,  // Closer spacing between icons
+          paddingHorizontal: 10,  
+          marginHorizontal: -10, 
         },
-        tabBarActiveTintColor: '#000',  // Ensure inactive and active icons don't show any color change
-        tabBarInactiveTintColor: '#888', // Ensure no color change effect on touch
-        tabBarButton: (props) => <TouchableOpacity {...props} activeOpacity={1} /> // Disable the touch effect
+        tabBarActiveTintColor: '#000',  
+        tabBarInactiveTintColor: '#888',
+        tabBarButton: (props) => <TouchableOpacity {...props} activeOpacity={1} /> 
       })}
     >
       <Tab.Screen name="Home" component={SurfaceFlawScreen} 
@@ -71,8 +80,17 @@ export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Tabs">
+        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="DeepLinkHandler" component={ForgotPasswordDeepLinkHandler} />
+        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
         <Stack.Screen name="View Report" component={ViewReportScreen} />
+        <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
+        <Stack.Screen name="OTPRequest" component={OTPRequestScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} options={{ headerShown: false }}/>
+        <Stack.Screen name="NewPassword" component={NewPasswordScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
