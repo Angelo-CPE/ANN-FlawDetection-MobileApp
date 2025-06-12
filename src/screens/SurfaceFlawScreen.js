@@ -8,7 +8,8 @@ import {
   Image,
   ScrollView,
   Dimensions,
-  RefreshControl
+  RefreshControl,
+  Alert
 } from 'react-native';
 import axios from 'axios';
 import io from 'socket.io-client';
@@ -16,9 +17,11 @@ import * as Print from 'expo-print';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Buffer } from 'buffer';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 const screenWidth = Dimensions.get('window').width;
 const API_URL = 'https://ann-flaw-detection-system-for-train.onrender.com';
+
 
 export default function SurfaceFlawScreen({ navigation }) {
   const [reports, setReports] = useState([]);
@@ -105,6 +108,7 @@ export default function SurfaceFlawScreen({ navigation }) {
   useEffect(() => {
     const socket = io(API_URL);
     
+    
     socket.on('report_updated', (updatedReport) => {
       setReports(prev => {
         const existingIndex = prev.findIndex(r => r._id === updatedReport._id);
@@ -125,6 +129,8 @@ export default function SurfaceFlawScreen({ navigation }) {
     });
 
     return () => socket.disconnect();
+
+    
   }, []);
 
   useEffect(() => {
@@ -138,24 +144,44 @@ export default function SurfaceFlawScreen({ navigation }) {
     }
   }, [reports]);
 
-  const fetchReports = async () => {
-    try {
-      setRefreshing(true);
-      const response = await axios.get(`${API_URL}/api/reports`);
-      const sortedReports = response.data.data.sort((a, b) => 
-        new Date(b.timestamp) - new Date(a.timestamp) || 
-        a.trainNumber - b.trainNumber ||
-        a.compartmentNumber - b.compartmentNumber ||
-        a.wheelNumber - b.wheelNumber
-      );
-      setReports(sortedReports);
-    } catch (error) {
-      console.error('Error fetching reports:', error);
-    } finally {
-      setRefreshing(false);
+const fetchReports = async () => {
+  try {
+    setRefreshing(true);
+    const token = await AsyncStorage.getItem('token');
+    
+    if (!token) {
+      Alert.alert('Authentication Error', 'Please log in to continue');
+      navigation.navigate('Login');
+      return;
     }
-  };
 
+    const response = await axios.get(`${API_URL}/api/reports`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const sortedReports = response.data.data.sort((a, b) =>
+      new Date(b.timestamp) - new Date(a.timestamp) ||
+      a.trainNumber - b.trainNumber ||
+      a.compartmentNumber - b.compartmentNumber ||
+      a.wheelNumber - b.wheelNumber
+    );
+    setReports(sortedReports);
+  } catch (error) {
+    console.error('Error fetching reports:', error);
+    if (error.response?.status === 401) {
+      // Token is invalid/expired - force logout
+      Alert.alert('Session Expired', 'Please log in again');
+      await AsyncStorage.removeItem('token');
+      navigation.navigate('Login'); // Or your login screen name
+    } else {
+      Alert.alert('Error', 'Failed to fetch reports. Please try again later');
+    }
+  } finally {
+    setRefreshing(false);
+  }
+};
   const groupByTrain = (reports) => {
     const grouped = {};
     reports.forEach((report) => {

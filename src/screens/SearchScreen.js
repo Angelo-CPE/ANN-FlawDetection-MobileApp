@@ -10,6 +10,12 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
+
+const handleLogout = async () => {
+  await AsyncStorage.removeItem('token');
+  navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+};
 
 export default function SearchScreen({ navigation }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,11 +25,20 @@ export default function SearchScreen({ navigation }) {
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        const response = await axios.get('https://ann-flaw-detection-system-for-train.onrender.com/api/reports');
+          const token = await AsyncStorage.getItem('token');
+          const response = await axios.get('https://ann-flaw-detection-system-for-train.onrender.com/api/reports', {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
           setReports(response.data.data);
           setFilteredReports(response.data.data);
       } catch (err) {
         console.error('Error fetching reports:', err);
+          if (err.response?.status === 401) {
+            Alert.alert('Session Expired', 'Please log in again.');
+            handleLogout();
+          }
       }
     };
     fetchReports();

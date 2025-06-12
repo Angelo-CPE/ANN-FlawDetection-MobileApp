@@ -7,9 +7,8 @@ export default function ReportItem({ report, navigation }) {
   const date = new Date(report.timestamp);
   const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
 
-const imageUrl = `http://192.168.1.11:5000${report.image_path}`;
-console.log('Report image path:', report.image_path);
-console.log('Resolved image URL:', imageUrl);
+  const imageUrl = `https://ann-flaw-detection-system-for-train.onrender.com${report.image_path}`;
+
   return (
     <TouchableOpacity
       style={styles.item}
@@ -18,12 +17,15 @@ console.log('Resolved image URL:', imageUrl);
       <View style={styles.textContainer}>
         <Text style={styles.name}>{report.name}</Text>
         <Text style={styles.date}>{formattedDate}</Text>
+        <View style={[styles.statusContainer, statusStyle]}>
+          <Text style={styles.statusText}>{report.status}</Text>
+        </View>
       </View>
-        <Image source={{ uri: 'http://192.168.1.11:5000/uploads/1748325175423-ed40a373.jpg' }} style={styles.image} />
-          onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
-      <View style={[styles.statusContainer, statusStyle]}>
-        <Text style={styles.statusText}>{report.status}</Text>
-      </View>
+      <Image
+        source={{ uri: imageUrl }}
+        style={styles.image}
+        onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+      />
     </TouchableOpacity>
   );
 }
@@ -43,34 +45,34 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 2,
+    paddingRight: 10,
+    justifyContent: 'center',
   },
   name: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333', // Black color for text
+    color: '#333',
   },
   date: {
-    color: '#666', // Gray color for date
+    color: '#666',
     marginTop: 5,
   },
   image: {
-    width: 100,  // Adjust based on your layout
-    height: 100, // Adjust based on your layout
+    width: 100,
+    height: 100,
     borderRadius: 10,
-    marginVertical: 10,
   },
   statusContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 10,
+    marginTop: 10,
+    padding: 8,
     borderRadius: 5,
-    minWidth: 100,
+    alignSelf: 'flex-start',
   },
   flawedStatus: {
-    backgroundColor: 'red', // Red for "Flawed"
+    backgroundColor: 'red',
   },
   noFlawStatus: {
-    backgroundColor: 'green', // Green for "No Flaw"
+    backgroundColor: 'green',
   },
   statusText: {
     color: 'white',
