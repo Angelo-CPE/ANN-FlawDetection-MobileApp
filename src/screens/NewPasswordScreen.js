@@ -60,6 +60,10 @@ const NewPasswordScreen = () => {
     }
   };
 
+    const handleGoBack = () => {
+    navigation.goBack();
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -69,6 +73,7 @@ const NewPasswordScreen = () => {
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
       >
+
         <View style={styles.header}>
           <Image 
             source={require('../assets/logo.png')} 
@@ -154,6 +159,14 @@ const NewPasswordScreen = () => {
               <Text style={styles.buttonText}>Update Password</Text>
             )}
           </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.backLink} 
+                      onPress={() => navigation.goBack()}
+                      activeOpacity={0.6}
+                    >
+                      <Icon name="arrow-back" size={16} color="#c62828" />
+                      <Text style={styles.backLinkText}>Back</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -175,9 +188,11 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   logo: {
+    
     width: 120,
     height: 80,
-    marginBottom: 16,
+    marginTop: 50,
+    marginBottom: -20
   },
   title: {
     fontSize: 24,
@@ -232,7 +247,7 @@ const styles = StyleSheet.create({
   },
   button: {
     height: 52,
-    backgroundColor: '#0066CC',
+    backgroundColor: '#000000',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -244,7 +259,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   disabledButton: {
-    backgroundColor: '#8E8E93',
+    backgroundColor: '#000000',
   },
   buttonText: {
     color: '#FFFFFF',
@@ -272,6 +287,18 @@ const styles = StyleSheet.create({
     color: '#2E7D32',
     fontSize: 14,
     textAlign: 'center',
+  },
+    backLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 24,
+    justifyContent: 'center',
+  },
+  backLinkText: {
+    color: '#000',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });
 

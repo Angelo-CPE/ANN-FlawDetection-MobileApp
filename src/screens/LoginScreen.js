@@ -13,13 +13,19 @@ import {
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const LoginScreen = () => {
+const LoginScreen = ({ updateAuthState }) => {  // Add updateAuthState prop
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
+  const [showPassword, setShowPassword] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -33,15 +39,35 @@ const LoginScreen = () => {
     }
 
     setLoading(true);
+    setError('');
+
     try {
       const response = await axios.post('https://ann-flaw-detection-system-for-train.onrender.com/api/auth/login', {
         email,
         password
       });
-        await AsyncStorage.setItem('token', response.data.token);
+
+      if (response.data.token) {
+        await AsyncStorage.multiSet([
+          ['token', response.data.token],
+          ['user', JSON.stringify(response.data.user)]
+        ]);
+
+        if (updateAuthState) {
+          updateAuthState(true);
+        }
+
         navigation.navigate('Tabs');
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please try again.');
+      const errorMessage = err.response?.data?.error || 
+                         err.response?.data?.message || 
+                         'Login failed. Please try again.';
+      setError(errorMessage);
+
+      if (updateAuthState) {
+        updateAuthState(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -77,16 +103,30 @@ const LoginScreen = () => {
           />
         </View>
 
-        <View style={styles.inputContainer}>
+         <View style={styles.inputContainer}>
           <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor="#999"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+          <View style={styles.passwordInputContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="••••••••"
+              placeholderTextColor="#999"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity 
+              style={styles.eyeButton}
+              onPress={togglePasswordVisibility}
+              hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+            >
+              <Icon 
+                name={showPassword ? 'visibility-off' : 'visibility'} 
+                size={24} 
+                color="#8E8E93" 
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity 
@@ -113,6 +153,21 @@ const LoginScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+  },
+    passwordInput: {
+    flex: 1,
+    height: 50,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    paddingRight: 40,
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
@@ -185,6 +240,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
   },
+    eyeButton: {
+    padding: 10,
+    marginRight: 8,
+  }
 });
 
 export default LoginScreen;

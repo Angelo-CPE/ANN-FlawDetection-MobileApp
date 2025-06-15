@@ -27,7 +27,28 @@ const RegisterScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigation = useNavigation();
+  const [resendLoading, setResendLoading] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
 
+  const handleResendVerification = async () => {
+    if (!registeredEmail) return;
+    
+    setResendLoading(true);
+    try {
+      await axios.post('https://ann-flaw-detection-system-for-train.onrender.com/api/auth/resend-verification', {
+        email: registeredEmail
+      });
+      Alert.alert('Success', 'Verification email has been resent. Please check your inbox.');
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || 
+                         err.response?.data?.error || 
+                         'Failed to resend verification email';
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setResendLoading(false);
+    }
+  };
+  
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
@@ -87,27 +108,28 @@ const RegisterScreen = () => {
         password
       });
       
-      if (response.data.token) {
-        await AsyncStorage.setItem('token', response.data.token);
-      }
+      setRegisteredEmail(email); // Store the registered email
       
-      // Show success alert
+      // Show success alert with resend option
       Alert.alert(
         'Registration Successful',
-        'Your account has been created successfully!',
+        'Please check your email to verify your account. Didn\'t receive the email?',
         [
+          {
+            text: 'Resend',
+            onPress: handleResendVerification
+          },
           {
             text: 'OK',
             onPress: () => navigation.navigate('Login')
           }
-        ],
-        { cancelable: false }
+        ]
       );
       
     } catch (err) {
       const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.error || 
-                          'Registration failed. Please try again.';
+                         err.response?.data?.error || 
+                         'Registration failed. Please try again.';
       setError(errorMessage);
     } finally {
       setLoading(false);

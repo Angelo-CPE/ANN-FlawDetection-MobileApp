@@ -3,6 +3,18 @@
   "license": "0BSD",
   "version": "1.0.0",
   "main": "index.js",
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "react-native-vector-icons",
+          "buffer",
+          "socket.io-client"
+        ],
+        "listUnknownPackages": false
+      }
+    }
+  },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -10,29 +22,28 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-async-storage/async-storage": "2.1.2",
     "@react-navigation/bottom-tabs": "^7.3.13",
-    "@react-navigation/native": "^7.1.9",
-    "@react-navigation/stack": "^7.3.2",
+    "@react-navigation/native": "^7.1.10",
+    "@react-navigation/stack": "^7.3.3",
     "axios": "^1.9.0",
     "buffer": "^6.0.3",
-    "expo": "~53.0.9",
+    "expo": "53.0.11",
     "expo-file-system": "~18.1.10",
+    "expo-linear-gradient": "~14.1.5",
     "expo-linking": "^7.1.5",
     "expo-print": "~14.1.4",
     "expo-sharing": "~13.1.5",
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",
-    "react-native": "0.79.2",
-    "react-native-gesture-handler": "^2.25.0",
+    "react-native": "0.79.3",
+    "react-native-gesture-handler": "~2.24.0",
     "react-native-modal": "^14.0.0-rc.1",
-    "react-native-reanimated": "^3.18.0",
-    "react-native-safe-area-context": "^5.4.0",
-    "react-native-screens": "^4.10.0",
-    "react-native-snap-carousel": "^3.9.1",
+    "react-native-reanimated": "~3.17.4",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "^4.11.1",
     "react-native-vector-icons": "^10.2.0",
-    "socket.io-client": "^4.8.1",
-    "expo-linear-gradient": "~14.1.5"
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
