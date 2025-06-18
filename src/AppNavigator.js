@@ -38,7 +38,7 @@ function LoadingScreen() {
 }
 
 function TabNavigator() {
-   useEffect(() => {
+  useEffect(() => {
     const loadUserData = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
@@ -73,31 +73,28 @@ function TabNavigator() {
           }
           return <Icon name={iconName} size={size} color={color} />;
         },
-        tabBarLabel: () => null,  
+        tabBarLabel: () => null,
         tabBarStyle: {
-          paddingStart: 50,
-          paddingTop: 15,
-          height: 60, 
+          height: 60,
           backgroundColor: '#fff',
-          borderTopWidth: 0, 
-          position: 'absolute', 
+          borderTopWidth: 0,
+          position: 'absolute',
+          left: '20%',   
+          right: '20%',  
           bottom: 0,
-          display: 'flex',
-          flexDirection: 'row',
-          justifyContent: 'center', 
-          paddingBottom: 60,
-          shadowOpacity: 0,
           elevation: 0,
+          shadowOpacity: 0,
+          borderTopLeftRadius: 20, 
+          borderTopRightRadius: 20,
+          paddingTop: 10
         },
         tabBarItemStyle: {
-          flex: 1,
-          maxWidth: 100, 
-          paddingHorizontal: 10,  
-          marginHorizontal: -10, 
+          width: 60,      
+          padding: 0,
         },
-        tabBarActiveTintColor: '#000',  
+        tabBarActiveTintColor: '#000',
         tabBarInactiveTintColor: '#888',
-        tabBarButton: (props) => <TouchableOpacity {...props} activeOpacity={1} /> 
+        tabBarButton: (props) => <TouchableOpacity {...props} activeOpacity={1} />
       })}
     >
       <Tab.Screen name="Home" component={SurfaceFlawScreen} options={{ headerShown: false }}/>
@@ -106,7 +103,6 @@ function TabNavigator() {
     </Tab.Navigator>
   );
 }
-
 export default function AppNavigator() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);

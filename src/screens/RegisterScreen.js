@@ -191,11 +191,11 @@ const RegisterScreen = () => {
             <View style={styles.inputWithIcon}>
               <TextInput
               style={styles.inputWithIconField}
-              placeholder="*******"
+              placeholder="••••••"
               placeholderTextColor="#8E8E93"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              secureTextEntry={!showPassword}
             />
             <TouchableOpacity 
                 style={styles.iconTouchable}
@@ -218,7 +218,7 @@ const RegisterScreen = () => {
             <View style={styles.inputWithIcon}>
               <TextInput
                 style={styles.inputWithIconField}
-                placeholder="******"
+                placeholder="••••••"
                 placeholderTextColor="#8E8E93"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}

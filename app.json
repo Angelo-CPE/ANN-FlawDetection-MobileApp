@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "Swift",
-    "slug": "Swift WHeel Inspection App",
+    "name": "SWIFT",
+    "slug": "ReportApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logobg.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "scheme": "swiftapp", 
+    "scheme": "swiftapp",
     "splash": {
       "image": "./assets/logobg.png",
       "resizeMode": "contain",
@@ -18,9 +18,8 @@
     },
     "android": {
       "adaptiveIcon": {
-      "foregroundImage": "./assets/logo.png", 
-      "backgroundColor": "#FFFFFF",        
-      "backgroundImage": "./assets/logobg.png" 
+        "foregroundImage": "./assets/bgappicom.png",
+        "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.trixia.ReportApp"
@@ -32,6 +31,7 @@
       "eas": {
         "projectId": "52ebf960-c70e-42d0-9e8c-36d2c3d2e330"
       }
-    }
+    },
+    "owner": "trixia"
   }
 }
