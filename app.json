@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/bgappicom.png",
+        "foregroundImage": "./assets/bgappicon.png",
         "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,

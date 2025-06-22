@@ -240,7 +240,7 @@ const generateTrainHTML = async (trainNumber, trainReports) => {
             </tr>
             <tr>
               <th>Wheel Diameter</th>
-              <td>${r.wheel_diameter || 'N/A'}</td>
+              <td>${r.wheel_diameter + 'mm'|| 'N/A'}</td>
             </tr>
             <tr>
               <th>Surface Status</th>

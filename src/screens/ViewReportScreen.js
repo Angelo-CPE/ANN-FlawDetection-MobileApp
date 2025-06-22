@@ -281,7 +281,7 @@ export default function EditReportScreen({ route, navigation }) {
               </tr>
               <tr>
                 <th>Wheel Diameter</th>
-                <td>${report.wheel_diameter || 'N/A'}</td>
+                <td>${report.wheel_diameter + 'mm'|| 'N/A'}</td>
               </tr>
               <tr>
                 <th>Surface Status</th>
