@@ -22,7 +22,7 @@ const OTPVerificationScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendDisabled, setResendDisabled] = useState(true);
-  const [countdown, setCountdown] = useState(30);
+  const [countdown, setCountdown] = useState(120);
   const { email } = useRoute().params;
   const navigation = useNavigation();
   
@@ -82,11 +82,12 @@ const OTPVerificationScreen = () => {
 
   const handleResendOTP = async () => {
     setResendDisabled(true);
-    setCountdown(30);
+    setCountdown(120); // Reset to 2 minutes
     setError('');
     setOtp('');
     
     try {
+      setLoading(true);
       await axios.post('https://ann-flaw-detection-system-for-train.onrender.com/api/auth/resend-otp', { email });
       
       // Start countdown again
@@ -101,9 +102,17 @@ const OTPVerificationScreen = () => {
         });
       }, 1000);
     } catch (err) {
-      setError('Failed to resend OTP. Please try again.');
+      setError(err.response?.data?.error || 'Failed to resend OTP. Please try again.');
       setResendDisabled(false);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const formatCountdown = () => {
+    const minutes = Math.floor(countdown / 60);
+    const seconds = countdown % 60;
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
 return (
@@ -154,12 +163,18 @@ return (
             <TouchableOpacity 
               style={styles.resendContainer}
               onPress={handleResendOTP}
-              disabled={resendDisabled}
+              disabled={resendDisabled || loading}
             >
-              <Text style={[styles.resendText, resendDisabled && styles.resendDisabled]}>
-                Didn't receive code? {resendDisabled ? `Resend in ${countdown}s` : 'Resend now'}
+              <Text style={styles.resendPromptText}>Didn't receive code? </Text>
+              <Text style={[
+                styles.resendActionText,
+                resendDisabled && styles.resendActionDisabled,
+                !resendDisabled && styles.resendActionActive
+              ]}>
+                {resendDisabled ? `Resend in ${formatCountdown()}` : 'Resend now'}
               </Text>
             </TouchableOpacity>
+
 
             <TouchableOpacity 
               style={[styles.button, loading && styles.buttonDisabled]}
@@ -290,6 +305,14 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.7,
   },
+  resendPromptText: {
+  color: '#000000',  // Black text
+  fontSize: 14,
+  },
+  resendActionText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
   resendContainer: {
     alignItems: 'center',
     marginBottom: 24,
@@ -300,6 +323,15 @@ const styles = StyleSheet.create({
   },
   resendDisabled: {
     color: '#adb5bd',
+  },
+  resendLoading: {
+  opacity: 0.7,
+  },
+  resendActionDisabled: {
+  color: '#adb5bd',  
+  },
+  resendActionActive: {
+    color: '#C62828',  
   },
 });
 

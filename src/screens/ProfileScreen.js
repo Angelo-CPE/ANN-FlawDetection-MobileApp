@@ -128,7 +128,7 @@ export default function ProfileScreen() {
             style={styles.actionButton} 
             onPress={handleForgotPassword}
           >
-            <Icon name="lock-reset" size={24} color="#4a6da7" />
+            <Icon name="lock-reset" size={24} color="#000000" />
             <Text style={styles.actionButtonText}>Change Password</Text>
             <Icon name="chevron-right" size={24} color="#ccc" />
           </TouchableOpacity>
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#4a6da7',
+    backgroundColor: '#000000',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
