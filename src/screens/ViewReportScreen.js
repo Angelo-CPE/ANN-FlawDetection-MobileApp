@@ -17,6 +17,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Buffer } from 'buffer';
+import { Asset } from 'expo-asset';
 
 const API_URL = 'https://ann-flaw-detection-system-for-train.onrender.com';
 
@@ -47,22 +48,20 @@ export default function EditReportScreen({ route, navigation }) {
     }
   };
 
-  // Original working logo fetching
   const getLogoBase64 = async () => {
     try {
-      const logo = require('../assets/logo.png');
-      const response = await fetch(Image.resolveAssetSource(logo).uri);
-      const blob = await response.blob();
-      return await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result); 
-        reader.readAsDataURL(blob);
+      const asset = Asset.fromModule(require('../assets/logo.png'));
+      await asset.downloadAsync();
+      const response = await FileSystem.readAsStringAsync(asset.localUri || '', {
+        encoding: FileSystem.EncodingType.Base64,
       });
+      return `data:image/png;base64,${response}`;
     } catch (error) {
-      console.log('Could not load logo, using fallback');
-      return ''; 
+      console.error('Error loading logo:', error);
+      return '';
     }
   };
+
 
   useEffect(() => {
   const fetchReport = async () => {
@@ -281,7 +280,7 @@ export default function EditReportScreen({ route, navigation }) {
               </tr>
               <tr>
                 <th>Wheel Diameter</th>
-                <td>${report.wheel_diameter + 'mm'|| 'N/A'}</td>
+                <td>${report.wheel_diameter + ' mm'|| 'N/A'}</td>
               </tr>
               <tr>
                 <th>Surface Status</th>

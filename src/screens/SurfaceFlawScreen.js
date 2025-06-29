@@ -20,6 +20,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Buffer } from 'buffer';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import { Asset } from 'expo-asset';
 
 const screenWidth = Dimensions.get('window').width;
 const API_URL = 'https://ann-flaw-detection-system-for-train.onrender.com';
@@ -57,17 +58,15 @@ export default function SurfaceFlawScreen({ navigation }) {
 
   const getLogoBase64 = async () => {
   try {
-    const logo = require('../assets/logo.png');
-    const response = await fetch(Image.resolveAssetSource(logo).uri);
-    const blob = await response.blob();
-    return await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result); 
-      reader.readAsDataURL(blob);
+    const asset = Asset.fromModule(require('../assets/logo.png'));
+    await asset.downloadAsync();
+    const response = await FileSystem.readAsStringAsync(asset.localUri || '', {
+      encoding: FileSystem.EncodingType.Base64,
     });
+    return `data:image/png;base64,${response}`;
   } catch (error) {
-    console.log('Could not load logo, using fallback');
-    return ''; 
+    console.error('Error loading logo:', error);
+    return '';
   }
 };
 
@@ -82,6 +81,12 @@ const generateTrainHTML = async (trainNumber, trainReports) => {
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <style>
+      .page-break-avoid {
+        page-break-inside: avoid;
+        page-break-after: avoid;
+        break-inside: avoid;
+        break-after: avoid;
+      }
       @page {
         size: A4;
         margin: 20mm;
@@ -189,13 +194,13 @@ const generateTrainHTML = async (trainNumber, trainReports) => {
     </style>
   </head>
    <body>
-      <div class="header">
-        ${logoBase64 ? `<img class="logo" src="${logoBase64}" alt="Logo">` : ''}
-        <div class="header-text">
-          <h1>SWIFT WHEEL INSPECTION SYSTEM</h1>
-          <div class="subtitle">WHEEL INSPECTION REPORT</div>
-        </div>
+    <div class="header page-break-avoid">
+      ${logoBase64 ? `<img class="logo" src="${logoBase64}" alt="Logo">` : ''}
+      <div class="header-text">
+        <h1>SWIFT WHEEL INSPECTION SYSTEM</h1>
+        <div class="subtitle">WHEEL INSPECTION REPORT</div>
       </div>
+    </div>
     
     <div class="report-info">
       <div>Train Number: ${trainNumber}</div>
@@ -240,7 +245,7 @@ const generateTrainHTML = async (trainNumber, trainReports) => {
             </tr>
             <tr>
               <th>Wheel Diameter</th>
-              <td>${r.wheel_diameter + 'mm'|| 'N/A'}</td>
+              <td>${r.wheel_diameter + ' mm'|| 'N/A'}</td>
             </tr>
             <tr>
               <th>Surface Status</th>
@@ -305,32 +310,30 @@ const handleTrainReportExport = async (trainNumber, compartments) => {
 };
 
   useEffect(() => {
-    const socket = io(API_URL);
-    
-    
-    socket.on('report_updated', (updatedReport) => {
-      setReports(prev => {
-        const existingIndex = prev.findIndex(r => r._id === updatedReport._id);
-        let newReports;
-        
-        if (existingIndex >= 0) {
-          newReports = [...prev];
-          newReports[existingIndex] = updatedReport;
-        } else {
-          newReports = [updatedReport, ...prev];
-        }
-        
-        return newReports.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp) || 
-               a.trainNumber - b.trainNumber ||
-               a.compartmentNumber - b.compartmentNumber ||
-               a.wheelNumber - b.wheelNumber);
+  const socket = io(API_URL);
+  
+  socket.on('report_updated', (updatedReport) => {
+    setReports(prev => {
+      const existingIndex = prev.findIndex(r => r._id === updatedReport._id);
+      let newReports;
+      
+      if (existingIndex >= 0) {
+        newReports = [...prev];
+        newReports[existingIndex] = updatedReport;
+      } else {
+        newReports = [updatedReport, ...prev];
+      }
+      
+      return newReports.sort((a, b) => {
+        const dateDiff = new Date(b.timestamp) - new Date(a.timestamp);
+        if (dateDiff !== 0) return dateDiff;
+        return a.trainNumber - b.trainNumber;
       });
     });
+  });
 
-    return () => socket.disconnect();
-
-    
-  }, []);
+  return () => socket.disconnect();
+}, []);
 
   useEffect(() => {
     fetchReports();
@@ -365,20 +368,19 @@ const fetchReports = async () => {
       }
     });
 
-    const sortedReports = response.data.data.sort((a, b) =>
-      new Date(b.timestamp) - new Date(a.timestamp) ||
-      a.trainNumber - b.trainNumber ||
-      a.compartmentNumber - b.compartmentNumber ||
-      a.wheelNumber - b.wheelNumber
-    );
+    const sortedReports = response.data.data.sort((a, b) => {
+      const dateDiff = new Date(b.timestamp) - new Date(a.timestamp);
+      if (dateDiff !== 0) return dateDiff;
+      return a.trainNumber - b.trainNumber;
+    });
+    
     setReports(sortedReports);
   } catch (error) {
     console.error('Error fetching reports:', error);
     if (error.response?.status === 401) {
-      // Token is invalid/expired - force logout
       Alert.alert('Session Expired', 'Please log in again');
       await AsyncStorage.removeItem('token');
-      navigation.navigate('Login'); // Or your login screen name
+      navigation.navigate('Login');
     } else {
       Alert.alert('Error', 'Failed to fetch reports. Please try again later');
     }
@@ -387,15 +389,23 @@ const fetchReports = async () => {
   }
 };
   const groupByTrain = (reports) => {
-    const grouped = {};
-    reports.forEach((report) => {
-      const { trainNumber, compartmentNumber } = report;
-      if (!grouped[trainNumber]) grouped[trainNumber] = {};
-      if (!grouped[trainNumber][compartmentNumber]) grouped[trainNumber][compartmentNumber] = [];
-      grouped[trainNumber][compartmentNumber].push(report);
-    });
-    setGroupedReports(grouped);
-  };
+  const grouped = {};
+  
+  const sortedReports = [...reports].sort((a, b) => {
+    const dateDiff = new Date(b.timestamp) - new Date(a.timestamp);
+    if (dateDiff !== 0) return dateDiff;
+    return a.trainNumber - b.trainNumber;
+  });
+
+  sortedReports.forEach((report) => {
+    const { trainNumber, compartmentNumber } = report;
+    if (!grouped[trainNumber]) grouped[trainNumber] = {};
+    if (!grouped[trainNumber][compartmentNumber]) grouped[trainNumber][compartmentNumber] = [];
+    grouped[trainNumber][compartmentNumber].push(report);
+  });
+  
+  setGroupedReports(grouped);
+};
 
   const getTrainStatus = (trainReports) => {
   const allReports = Object.values(trainReports).flat();
@@ -544,145 +554,175 @@ const renderLatestReportCard = () => {
 };
 
 const renderTrainList = () => {
+  // Group all reports by date first
+  const reportsByDate = {};
+  
+  Object.entries(groupedReports).forEach(([trainNumber, compartments]) => {
+    Object.values(compartments).flat().forEach(report => {
+      const date = new Date(report.timestamp).toLocaleDateString();
+      if (!reportsByDate[date]) {
+        reportsByDate[date] = {};
+      }
+      if (!reportsByDate[date][trainNumber]) {
+        reportsByDate[date][trainNumber] = [];
+      }
+      reportsByDate[date][trainNumber].push(report);
+    });
+  });
+
+  // Sort dates in descending order (newest first)
+  const sortedDates = Object.keys(reportsByDate).sort((a, b) => 
+    new Date(b) - new Date(a)
+  );
+
   return (
     <View style={styles.sectionContainer}>
-      <Text style={styles.cardTitle}>All Trains</Text>
-      {Object.entries(groupedReports).map(([trainNumber, compartments]) => {
-        const reportsByDate = {};
-        Object.values(compartments)
-          .flat()
-          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-          .forEach(report => {
-            const date = new Date(report.timestamp).toLocaleDateString();
-            if (!reportsByDate[date]) {
-              reportsByDate[date] = {};
-            }
-            if (!reportsByDate[date][report.compartmentNumber]) {
-              reportsByDate[date][report.compartmentNumber] = [];
-            }
-            reportsByDate[date][report.compartmentNumber].push(report);
-          });
+      <Text style={styles.cardTitle}>All Reports</Text>
+      
+      {sortedDates.map((date) => {
+        // Get train numbers for this date and sort them numerically
+        const trainNumbers = Object.keys(reportsByDate[date])
+          .map(Number)
+          .sort((a, b) => a - b);
 
-        return Object.entries(reportsByDate).map(([date, dateCompartments]) => {
-          const allReports = Object.values(dateCompartments).flat();
-          const hasFlaw = allReports.some(r => r.status === 'FLAW DETECTED');
-          const hasBadCondition = allReports.some(r => getWheelCondition(r.wheel_diameter) === 'BAD CONDITION');
-          const isSelected = selectedTrain === `${trainNumber}-${date}`;
+        return (
+          <React.Fragment key={date}>
+            {trainNumbers.map((trainNumber) => {
+              const trainReports = reportsByDate[date][trainNumber];
+              const hasFlaw = trainReports.some(r => r.status === 'FLAW DETECTED');
+              const hasBadCondition = trainReports.some(r => getWheelCondition(r.wheel_diameter) === 'BAD CONDITION');
+              const isSelected = selectedTrain === `${trainNumber}-${date}`;
 
-          return (
-            <View key={`${trainNumber}-${date}`} style={[styles.trainCard, { marginBottom: 16 }]}>
-              <TouchableOpacity onPress={() => {
-                setSelectedTrain(isSelected ? null : `${trainNumber}-${date}`);
-                setSelectedCompartment(null);
-              }}>
-                <Text style={styles.trainTitle}>Train {trainNumber}</Text>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={styles.trainInfo}>{date}</Text>
-                  <View style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={[styles.trainInfo, hasFlaw ? styles.flawedText : styles.normalText]}>
-                        {hasFlaw ? 'FLAW DETECTED' : 'NO FLAW'}
-                      </Text>
-                      <View style={[styles.statusDot, { 
-                        backgroundColor: hasFlaw ? 'red' : 'green', 
-                        marginLeft: 6 
-                      }]} />
+              return (
+                <View key={`${trainNumber}-${date}`} style={[styles.trainCard, { marginBottom: 16 }]}>
+                  <TouchableOpacity onPress={() => {
+                    setSelectedTrain(isSelected ? null : `${trainNumber}-${date}`);
+                    setSelectedCompartment(null);
+                  }}>
+                    <Text style={styles.trainTitle}>Train {trainNumber}</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={styles.trainInfo}>{date}</Text>
+                      <View style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Text style={[styles.trainInfo, hasFlaw ? styles.flawedText : styles.normalText]}>
+                            {hasFlaw ? 'FLAW DETECTED' : 'NO FLAW'}
+                          </Text>
+                          <View style={[styles.statusDot, { 
+                            backgroundColor: hasFlaw ? 'red' : 'green', 
+                            marginLeft: 6 
+                          }]} />
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Text style={[styles.trainInfo, hasBadCondition ? styles.flawedText : styles.normalText]}>
+                            {hasBadCondition ? 'BAD CONDITION' : 'GOOD CONDITION'}
+                          </Text>
+                          <View style={[styles.statusDot, { 
+                            backgroundColor: hasBadCondition ? 'red' : 'green', 
+                            marginLeft: 6 
+                          }]} />
+                        </View>
+                      </View>
                     </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={[styles.trainInfo, hasBadCondition ? styles.flawedText : styles.normalText]}>
-                        {hasBadCondition ? 'BAD CONDITION' : 'GOOD CONDITION'}
-                      </Text>
-                      <View style={[styles.statusDot, { 
-                        backgroundColor: hasBadCondition ? 'red' : 'green', 
-                        marginLeft: 6 
-                      }]} />
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-
-              {isSelected && (
-                <>
-                  <TouchableOpacity
-                    onPress={() => handleTrainReportExport(trainNumber, dateCompartments)}
-                    style={{ marginTop: 10, padding: 10, backgroundColor: '#000', borderRadius: 6 }}
-                  >
-                    <Text style={{ color: '#fff', textAlign: 'center' }}>Print Report</Text>
                   </TouchableOpacity>
-                  <Text style={{ color: '#000000', textAlign: 'center', paddingTop: 10, marginBottom: -10}}>Compartment List</Text>
 
-                  <View style={styles.compartmentContainer}>
-                    {Object.entries(dateCompartments).map(([compNum, compReports]) => {
-                      const hasFlaw = compReports.some(r => r.status === 'FLAW DETECTED');
-                      const hasBadCondition = compReports.some(r => getWheelCondition(r.wheel_diameter) === 'BAD CONDITION');
-                      const needsAttention = hasFlaw || hasBadCondition;
+                  {isSelected && (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => handleTrainReportExport(trainNumber, reportsByDate[date])}
+                        style={{ marginTop: 10, padding: 10, backgroundColor: '#000', borderRadius: 6 }}
+                      >
+                        <Text style={{ color: '#fff', textAlign: 'center' }}>Print Report</Text>
+                      </TouchableOpacity>
                       
-                      return (
-                        <TouchableOpacity
-                          key={compNum}
-                          style={styles.compartmentButton}
-                          onPress={() => setSelectedCompartment(compNum)}
-                        >
-                          <Text style={styles.compartmentText}>C{compNum}</Text>
-                          <View style={[styles.statusDot, { backgroundColor: needsAttention ? 'red' : 'green' }]} />
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
+                      <Text style={{ color: '#000000', textAlign: 'center', paddingTop: 10, marginBottom: -10}}>Compartment List</Text>
 
-                {selectedCompartment && dateCompartments[selectedCompartment] && (
-                  <View style={styles.wheelGrid}>
-                    {dateCompartments[selectedCompartment].map((item) => {
-                      const isFlawed = item.status === 'FLAW DETECTED';
-                      const isBadCondition = getWheelCondition(item.wheel_diameter) === 'BAD CONDITION';
-                      
-                      return (
-                        <TouchableOpacity
-                          key={item._id}
-                          style={styles.wheelCard}
-                          onPress={() => navigation.navigate('View Report', { reportId: item._id })}
-                        >
-                          {item.image_path ? (
-                            <Image
-                              source={{ uri: `${API_URL}${item.image_path}` }}
-                              style={styles.wheelImage}
-                              resizeMode="cover"
-                              onError={(e) => console.log('Image error:', e.nativeEvent.error)}
-                            />
-                          ) : (
-                            <View style={styles.imagePlaceholder}>
-                              <Text>No Image</Text>
-                            </View>
-                          )}
-                          <View style={styles.wheelInfo}>
-                            <Text style={styles.wheelLabel}>Wheel {item.wheelNumber}</Text>
-                            <Text 
-                              style={[
-                                styles.wheelStatus,
-                                isFlawed ? styles.flawedText : styles.normalText
-                              ]}
+                      <View style={styles.compartmentContainer}>
+                        {Object.entries(
+                          trainReports.reduce((comps, report) => {
+                            if (!comps[report.compartmentNumber]) {
+                              comps[report.compartmentNumber] = [];
+                            }
+                            comps[report.compartmentNumber].push(report);
+                            return comps;
+                          }, {})
+                        )
+                        .sort(([a], [b]) => a - b)
+                        .map(([compNum, compReports]) => {
+                          const hasFlaw = compReports.some(r => r.status === 'FLAW DETECTED');
+                          const hasBadCondition = compReports.some(r => getWheelCondition(r.wheel_diameter) === 'BAD CONDITION');
+                          const needsAttention = hasFlaw || hasBadCondition;
+                          
+                          return (
+                            <TouchableOpacity
+                              key={compNum}
+                              style={styles.compartmentButton}
+                              onPress={() => setSelectedCompartment(compNum)}
                             >
-                              {isFlawed ? 'FLAW DETECTED' : 'NO FLAW'}
-                            </Text>
-                            <Text 
-                              style={[
-                                styles.wheelStatus,
-                                isBadCondition ? styles.flawedText : styles.normalText
-                              ]}
-                            >
-                              {isBadCondition ? 'BAD CONDITION' : 'GOOD CONDITION'}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                )}
-                </>
-              )}
-            </View>
-          );
-        });
+                              <Text style={styles.compartmentText}>C{compNum}</Text>
+                              <View style={[styles.statusDot, { backgroundColor: needsAttention ? 'red' : 'green' }]} />
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+
+                      {selectedCompartment && (
+                        <View style={styles.wheelGrid}>
+                          {trainReports
+                            .filter(r => r.compartmentNumber === selectedCompartment)
+                            .sort((a, b) => a.wheelNumber - b.wheelNumber)
+                            .map((item) => {
+                              const isFlawed = item.status === 'FLAW DETECTED';
+                              const isBadCondition = getWheelCondition(item.wheel_diameter) === 'BAD CONDITION';
+                              
+                              return (
+                                <TouchableOpacity
+                                  key={item._id}
+                                  style={styles.wheelCard}
+                                  onPress={() => navigation.navigate('View Report', { reportId: item._id })}
+                                >
+                                  {item.image_path ? (
+                                    <Image
+                                      source={{ uri: `${API_URL}${item.image_path}` }}
+                                      style={styles.wheelImage}
+                                      resizeMode="cover"
+                                      onError={(e) => console.log('Image error:', e.nativeEvent.error)}
+                                    />
+                                  ) : (
+                                    <View style={styles.imagePlaceholder}>
+                                      <Text>No Image</Text>
+                                    </View>
+                                  )}
+                                  <View style={styles.wheelInfo}>
+                                    <Text style={styles.wheelLabel}>Wheel {item.wheelNumber}</Text>
+                                    <Text 
+                                      style={[
+                                        styles.wheelStatus,
+                                        isFlawed ? styles.flawedText : styles.normalText
+                                      ]}
+                                    >
+                                      {isFlawed ? 'FLAW DETECTED' : 'NO FLAW'}
+                                    </Text>
+                                    <Text 
+                                      style={[
+                                        styles.wheelStatus,
+                                        isBadCondition ? styles.flawedText : styles.normalText
+                                      ]}
+                                    >
+                                      {isBadCondition ? 'BAD CONDITION' : 'GOOD CONDITION'}
+                                    </Text>
+                                  </View>
+                                </TouchableOpacity>
+                              );
+                            })}
+                        </View>
+                      )}
+                    </>
+                  )}
+                </View>
+              );
+            })}
+          </React.Fragment>
+        );
       })}
     </View>
   );
@@ -846,7 +886,7 @@ const styles = StyleSheet.create({
     marginTop: 15,
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 15,
     color: '#000',
   },
   tableRow: {
